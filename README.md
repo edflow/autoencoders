@@ -5,7 +5,9 @@ A collection of autoencoder models in PyTorch.
 ## Installation
 
 ```
-pip install -e git+https://github.com/edflow/autoencoders.git#egg=autoencoders
+git clone https://github.com/edflow/autoencoders.git
+cd autoencoders
+pip install -e .
 ```
 
 ## Usage
@@ -24,6 +26,8 @@ Models implement `encode`, which returns a Distribution, and `decode` which
 returns an image. A minimal working example is
 
 ```
+import torch
+import numpy as np
 from PIL import Image
 import autoencoders
 
