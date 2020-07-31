@@ -217,9 +217,80 @@ class ImageNetAnimalsValidation(ImageNetAnimalsBase):
     BASE_DATASET=ImageNetValidation
 
 
+class AnimalFacesBase(ImageNetBase):
+    NAME = "AnimalFaces"
+    COOR_URL = "https://github.com/NVlabs/FUNIT/raw/master/datasets/animalface_coordinates.txt"
+    TEST_URL = "https://github.com/NVlabs/FUNIT/raw/master/datasets/animals_list_test.txt"
+    TRAIN_URL = "https://github.com/NVlabs/FUNIT/raw/master/datasets/animals_list_train.txt"
+
+    def _prepare(self):
+        cachedir = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+        self.root = os.path.join(cachedir, "autoencoders/data/AnimalFaces")
+
+        os.makedirs(self.root, exist_ok=True)
+        self.datadir = os.path.join(self.root, "data")
+
+        if not edu.is_prepared(self.root):
+            self.logger.info("Preparing dataset {} in {}".format(self.NAME, self.root))
+
+            if not os.path.exists(self.datadir):
+                os.makedirs(self.datadir, exist_ok=True)
+                imagenet = ImageNetTrain()
+
+                coor_path = os.path.join(self.root, "animalface_coordinates.txt")
+                if not os.path.exists(coor_path):
+                    download(self.COOR_URL, coor_path)
+
+                with open(coor_path, "r") as f:
+                    animalface_coordinates = f.readlines()
+
+                for line in tqdm(animalface_coordinates):
+                    ls = line.strip().split(' ')
+                    img_name = os.path.join(imagenet.datadir, ls[0])
+                    img = Image.open(img_name)
+                    img = img.convert('RGB')
+                    x = int(ls[1])
+                    y = int(ls[2])
+                    w = int(ls[3])
+                    h = int(ls[4])
+                    crop = img.crop((x, y, w, h))
+
+                    out_name = os.path.join(self.datadir,
+                                            '%s_%d_%d_%d_%d.jpg' % (ls[0], x, y, w, h))
+                    os.makedirs(os.path.dirname(out_name), exist_ok=True)
+                    crop.save(out_name)
+
+            train_path = os.path.join(self.root, "animals_list_train.txt")
+            if not os.path.exists(train_path):
+                download(self.TRAIN_URL, train_path)
+
+            test_path = os.path.join(self.root, "animals_list_test.txt")
+            if not os.path.exists(test_path):
+                download(self.TEST_URL, test_path)
+
+            edu.mark_prepared(self.root)
+
+
+class AnimalFacesTrain(AnimalFacesBase):
+    def _prepare(self):
+        super()._prepare()
+        self.random_crop = False
+        self.txt_filelist = os.path.join(self.root, "animals_list_train.txt")
+        self.expected_length = 93404
+
+
+class AnimalFacesTest(AnimalFacesBase):
+    def _prepare(self):
+        super()._prepare()
+        self.random_crop = False
+        self.txt_filelist = os.path.join(self.root, "animals_list_test.txt")
+        self.expected_length = 24080
+
+
 if __name__ == "__main__":
     from edflow.util import pp2mkdtable
 
+    print("ImageNet")
     print("train")
     d = ImageNetTrain()
     print(len(d))
@@ -228,6 +299,19 @@ if __name__ == "__main__":
 
     print("validation")
     d = ImageNetValidation()
+    print(len(d))
+    e = d[0]
+    print(pp2mkdtable(e))
+
+    print("AnimalFaces")
+    print("train")
+    d = AnimalFacesTrain()
+    print(len(d))
+    e = d[0]
+    print(pp2mkdtable(e))
+
+    print("validation")
+    d = AnimalFacesTest()
     print(len(d))
     e = d[0]
     print(pp2mkdtable(e))
