@@ -1,0 +1,10 @@
+dataset: autoencoders.data.Folder
+Folder:
+  folder: assets
+  size: 128
+
+edexplore:
+  visualizations:
+    custom:
+      reconstruct:
+        path: autoencoders.demo.reconstruction

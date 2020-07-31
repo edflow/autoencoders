@@ -2,13 +2,23 @@
 
 A collection of autoencoder models in PyTorch.
 
-## Installation
+## Quickstart
+
+Install
 
 ```
 git clone https://github.com/edflow/autoencoders.git
 cd autoencoders
 pip install -e .
 ```
+
+and run a reconstruction demo:
+
+```
+edexplore -b configs/demo.yaml
+```
+
+To reconstruct your own images, just add them to the `assets` folder.
 
 ## Usage
 
