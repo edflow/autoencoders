@@ -23,6 +23,8 @@ class ImagePaths(DatasetMixin):
             else:
                 self.cropper = albumentations.RandomCrop(height=self.size,width=self.size)
             self.preprocessor = albumentations.Compose([self.rescaler, self.cropper])
+        else:
+            self.preprocessor = lambda **kwargs: kwargs
 
     def __len__(self):
         return self._length
