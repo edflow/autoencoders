@@ -7,6 +7,7 @@ from PIL import Image
 
 from edflow.util import retrieve
 import edflow.datasets.utils as edu
+from edflow.data.dataset import SubDataset
 
 from autoencoders.ckpt_util import download
 from autoencoders.data.util import ImagePaths
@@ -58,7 +59,8 @@ class ImageNetBase(edu.DatasetMixin):
         }
         self.data = ImagePaths(self.abspaths,
                                labels=labels,
-                               size=retrieve(self.config, "size", default=0))
+                               size=retrieve(self.config, "size", default=0),
+                               random_crop=self.random_crop)
 
 
 class ImageNetTrain(ImageNetBase):
@@ -73,7 +75,8 @@ class ImageNetTrain(ImageNetBase):
     ]
 
     def _prepare(self):
-        self.root = edu.get_root(self.NAME)
+        self.random_crop = retrieve(self.config, "ImageNetTrain/random_crop",
+                                    default=True)
         cachedir = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
         self.root = os.path.join(cachedir, "autoencoders/data", self.NAME)
         self.datadir = os.path.join(self.root, "data")
@@ -130,7 +133,8 @@ class ImageNetValidation(ImageNetBase):
     ]
 
     def _prepare(self):
-        self.root = edu.get_root(self.NAME)
+        self.random_crop = retrieve(self.config, "ImageNetValidation/random_crop",
+                                    default=False)
         cachedir = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
         self.root = os.path.join(cachedir, "autoencoders/data", self.NAME)
         self.datadir = os.path.join(self.root, "data")
@@ -179,6 +183,38 @@ class ImageNetValidation(ImageNetBase):
                 f.write(filelist)
 
             edu.mark_prepared(self.root)
+
+
+class ImageNetAnimalsBase(edu.DatasetMixin):
+    def __init__(self, config=None):
+        self._prepare_animal_synsets()
+        with open(self.animal_synsets, "r") as f:
+            animal_synsets = f.read().splitlines()
+
+        assert len(animal_synsets)==149
+        animal_synsets = set(animal_synsets)
+
+        data = self.BASE_DATASET(config)
+        indices = [i for i in range(len(data)) if data.labels["synsets"][i] in animal_synsets]
+        self.data = SubDataset(data, indices)
+
+    def _prepare_animal_synsets(self):
+        SIZE = 1490
+        URL = "https://heibox.uni-heidelberg.de/f/c18cdf02ea0b4e758729/?dl=1"
+        cachedir = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+        self.root = os.path.join(cachedir, "autoencoders/data/ImageNetAnimals")
+        self.animal_synsets = os.path.join(self.root, "animal_synsets.txt")
+        if (not os.path.exists(self.animal_synsets) or
+                not os.path.getsize(self.animal_synsets)==SIZE):
+            download(URL, self.animal_synsets)
+
+
+class ImageNetAnimalsTrain(ImageNetAnimalsBase):
+    BASE_DATASET=ImageNetTrain
+
+
+class ImageNetAnimalsValidation(ImageNetAnimalsBase):
+    BASE_DATASET=ImageNetValidation
 
 
 if __name__ == "__main__":
