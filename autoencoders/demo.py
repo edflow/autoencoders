@@ -7,7 +7,7 @@ from autoencoders.models.bigae import BigAE
 
 @st.cache(allow_output_mutation=True)
 def get_state(gpu, name="animals"):
-    model = BigAE.from_pretrained("animals")
+    model = BigAE.from_pretrained(name)
     if gpu:
         model.cuda()
     state = {"model": model}
@@ -16,10 +16,16 @@ def get_state(gpu, name="animals"):
 
 def reconstruction(ex, config):
     st.write("Options")
+
+    name = st.selectbox(
+        "Model Name",
+        ["animals", "animalfaces"],
+    )
+
     if torch.cuda.is_available():
         gpu = st.checkbox("gpu", value=True)
 
-    state = get_state(gpu=gpu)
+    state = get_state(name=name, gpu=gpu)
     model = state["model"]
 
     image, image_key = st_get_list_or_dict_item(ex, "image",

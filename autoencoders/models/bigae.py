@@ -181,22 +181,40 @@ class BigAE(nn.Module):
 
     @classmethod
     def from_pretrained(cls, name):
-        if name != "animals":
+        config_dict = {
+            "animals": {
+                "Model": {
+                    "deterministic": False,
+                    "in_size": 128,
+                    "norm": "an",
+                    "pretrained": False,
+                    "type": "resnet101",
+                    "use_actnorm_in_dec": True,
+                    "z_dim": 128,
+                }
+            },
+            "animalfaces": {
+                "Model": {
+                    "deterministic": False,
+                    "in_size": 128,
+                    "norm": "bn",
+                    "pretrained": False,
+                    "type": "resnet101",
+                    "use_actnorm_in_dec": False,
+                    "z_dim": 128,
+                }
+            },
+        }
+        ckpt_dict = {
+            "animals": "bigae_animals",
+            "animalfaces": "bigae_animalfaces",
+        }
+
+        if not name in config_dict:
             raise NotImplementedError(name)
 
-        config = {
-            "Model": {
-                "deterministic": False,
-                "in_size": 128,
-                "norm": "an",
-                "pretrained": False,
-                "type": "resnet101",
-                "use_actnorm_in_dec": True,
-                "z_dim": 128,
-            }
-        }
-        model = cls(config)
-        ckpt = get_ckpt_path("bigae_animals")
+        model = cls(config_dict[name])
+        ckpt = get_ckpt_path(ckpt_dict[name])
         model.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")))
         model.eval()
         return model
