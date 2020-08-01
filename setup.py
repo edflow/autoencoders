@@ -11,5 +11,6 @@ setup(
         'numpy',
         'requests',
         'tqdm',
+        'academictorrents'
     ],
 )
