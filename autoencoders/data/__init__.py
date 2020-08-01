@@ -1,1 +1,1 @@
-from autoencoders.data.util import Folder
+from autoencoders.data.util import Folder, ImagePaths
