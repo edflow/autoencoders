@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 URL_MAP = {
     "bigae_animals": "https://heibox.uni-heidelberg.de/f/f0adb4d509ea4132b9ea/?dl=1",
-    "bigae_animalfaces": "TODO",
+    "bigae_animalfaces": "https://heibox.uni-heidelberg.de/f/3c0bf40a85a84e2a986e/?dl=1",
     "biggan_128": "https://heibox.uni-heidelberg.de/f/56ed256209fd40968864/?dl=1",
 }
 CKPT_MAP = {

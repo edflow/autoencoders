@@ -1,6 +1,11 @@
 import torch
 import streamlit as st
-from edflow.util.edexplore import isimage, st_get_list_or_dict_item
+try:
+    from edflow.util.edexplore import isimage, st_get_list_or_dict_item
+except:
+    def st_get_list_or_dict_item(ex, key, **kwargs):
+        return ex[key], key
+    isimage = lambda x: x
 
 from autoencoders.models.bigae import BigAE
 
@@ -45,3 +50,14 @@ def reconstruction(ex, config):
     xout = xout.detach().cpu().numpy()
     st.write("Reconstruction")
     st.image((xout+1.0)/2.0)
+
+
+if __name__ == "__main__":
+    from autoencoders.data import Folder
+    dset = Folder({"Folder": {"folder":"assets",
+                              "size":128
+                              }
+                   })
+    dataidx = st.slider("data index",0, len(dset), 0)
+    example = dset[dataidx]
+    reconstruction(example, None)
