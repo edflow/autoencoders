@@ -222,6 +222,8 @@ class AnimalFacesBase(ImageNetBase):
     COOR_URL = "https://github.com/NVlabs/FUNIT/raw/master/datasets/animalface_coordinates.txt"
     TEST_URL = "https://github.com/NVlabs/FUNIT/raw/master/datasets/animals_list_test.txt"
     TRAIN_URL = "https://github.com/NVlabs/FUNIT/raw/master/datasets/animals_list_train.txt"
+    SHARED_TEST_URL = "https://heibox.uni-heidelberg.de/f/f44e33a5155b4b2fab47/?dl=1"
+    SHARED_TRAIN_URL = "https://heibox.uni-heidelberg.de/f/20cb4d546b304e5aba99/?dl=1"
 
     def _prepare(self):
         cachedir = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
@@ -268,6 +270,14 @@ class AnimalFacesBase(ImageNetBase):
             if not os.path.exists(test_path):
                 download(self.TEST_URL, test_path)
 
+            shared_train_path = os.path.join(self.root, "shared_animalfaces_train.txt")
+            if not os.path.exists(shared_train_path):
+                download(self.SHARED_TRAIN_URL, shared_train_path)
+
+            shared_test_path = os.path.join(self.root, "shared_animalfaces_test.txt")
+            if not os.path.exists(shared_test_path):
+                download(self.SHARED_TEST_URL, shared_test_path)
+
             edu.mark_prepared(self.root)
 
 
@@ -285,6 +295,22 @@ class AnimalFacesTest(AnimalFacesBase):
         self.random_crop = False
         self.txt_filelist = os.path.join(self.root, "animals_list_test.txt")
         self.expected_length = 24080
+
+
+class AnimalFacesSharedTrain(AnimalFacesBase):
+    def _prepare(self):
+        super()._prepare()
+        self.random_crop = False
+        self.txt_filelist = os.path.join(self.root, "shared_animalfaces_train.txt")
+        self.expected_length = 105653
+
+
+class AnimalFacesSharedTest(AnimalFacesBase):
+    def _prepare(self):
+        super()._prepare()
+        self.random_crop = False
+        self.txt_filelist = os.path.join(self.root, "shared_animalfaces_test.txt")
+        self.expected_length = 11831
 
 
 if __name__ == "__main__":
