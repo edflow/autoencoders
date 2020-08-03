@@ -1,7 +1,7 @@
 # Autoencoders
+![teaser](img/ae_teaser.png)
 
 A collection of autoencoder models in PyTorch.
-
 ## Quickstart
 
 Install
@@ -89,3 +89,25 @@ If you haven't extracted the data, you can also place
 which will then be extracted into above structure without downloading it again.
 
 ### AnimalFaces
+This dataset was for example used in [FUNIT](https://nvlabs.github.io/FUNIT/). It contains all 149 carnivorous mammal animal 
+classes from the ImageNet dataset. If this dataset is not available on your disk, the dataset will
+automatically be build upon first use, following the cropping procedure as described and 
+implemented [here](https://github.com/nvlabs/FUNIT/). Note that this requires that the __ImageNet__ dataset is already 
+present as described above.
+
+We provide two different splits of this dataset:
+    
+- The *"classic"* FUNIT split: Here, the train set contains images of
+    119 animal classes, while the test set contains 30 *different* classes.
+    - train split: __AnimalFacesTrain__
+    - test split: __AnimalFacesTest__
+    
+- The *"shared"* split: __AnimalFacesShared__: Here, both the train and test split contain images of 
+    *all* 149 classes.
+    - train split: __AnimalFacesSharedTrain__
+    - test split: __AnimalFacesSharedTest__      
+    
+### ImageNetAnimals
+This dataset contains the same images as __AnimalFacesShared__, but *without* cropping.
+- train split: __ImageNetAnimalsTrain__
+- test split: __ImageNetAnimalsValidation__
