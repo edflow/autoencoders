@@ -66,12 +66,12 @@ Note that the datasets will be downloaded (through [Academic
 Torrents](http://academictorrents.com/)) and prepared the first time they are
 used. Since ImageNet is quite large, this requires a lot of disk space and
 time. If you already have ImageNet on your disk, you can speed things up by
-putting the data into `${XDG_CACHE}/autoencoders/data/ILSVRC2012_train/data/`
-(which defaults to `~/.cache/autoencoders/data/ILSVRC2012_train/data/`). It
-should have the following structure:
+putting the data into `${XDG_CACHE}/autoencoders/data/ILSVRC2012_{split}/data/`
+(which defaults to `~/.cache/autoencoders/data/ILSVRC2012_{split}/data/`), where `{split}` is 
+one of `train`/`validation`. It should have the following structure:
 
 ```
-${XDG_CACHE}/autoencoders/data/ILSVRC2012_train/data/
+${XDG_CACHE}/autoencoders/data/ILSVRC2012_{split}/data/
 ├── n01440764
 │   ├── n01440764_10026.JPEG
 │   ├── n01440764_10027.JPEG
@@ -84,6 +84,8 @@ ${XDG_CACHE}/autoencoders/data/ILSVRC2012_train/data/
 ```
 
 If you haven't extracted the data, you can also place
-`ILSVRC2012_img_train.tar` into
-`${XDG_CACHE}/autoencoders/data/ILSVRC2012_train/`, which will then be
-extracted into above structure without downloading it again.
+`ILSVRC2012_img_train.tar`/`ILSVRC2012_img_val.tar` into
+`${XDG_CACHE}/autoencoders/data/ILSVRC2012_train/`/`${XDG_CACHE}/autoencoders/data/ILSVRC2012_validation/`, 
+which will then be extracted into above structure without downloading it again.
+
+### AnimalFaces

@@ -228,6 +228,7 @@ class AnimalFacesBase(ImageNetBase):
     def _prepare(self):
         cachedir = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
         self.root = os.path.join(cachedir, "autoencoders/data/AnimalFaces")
+        self.logger.info("Using data located at {}".format(self.root))
 
         os.makedirs(self.root, exist_ok=True)
         self.datadir = os.path.join(self.root, "data")
