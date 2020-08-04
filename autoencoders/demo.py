@@ -58,6 +58,6 @@ if __name__ == "__main__":
                               "size":128
                               }
                    })
-    dataidx = st.slider("data index",0, len(dset), 0)
+    dataidx = st.slider("data index",0, len(dset)-1, 0)
     example = dset[dataidx]
     reconstruction(example, None)

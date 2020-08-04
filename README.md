@@ -2,6 +2,7 @@
 ![teaser](img/ae_teaser.png)
 
 A collection of autoencoder models in PyTorch.
+
 ## Quickstart
 
 Install
@@ -53,21 +54,34 @@ xrec = model.decode(z)                                # batch,RGB,h,w
 
 ## Data
 
+Import dataset classes:
+
+```
+from autoencoders.data import <DatasetSplit>
+```
+
+Take a look:
+
+```
+edexplore --dataset autoencoders.data.<DatasetSplit>
+```
+
+Possible values for `<DatasetSplit>`:
+
+- `ImageNetTrain`, `ImageNetValidation`
+- `ImageNetAnimalsTrain`, `ImageNetAnimalsValidation`
+- `AnimalFacesTrain`, `AnimalFacesTest`
+- `AnimalFacesSharedTrain`, `AnimalFacesSharedTest`
+- `AnimalFacesRestrictedTrain`, `AnimalFacesRestrictedTest`
+
 ### ImageNet
-
-You can take a look with
-
-```
-edexplore --dataset autoencoders.data.ImageNetTrain
-edexplore --dataset autoencoders.data.ImageNetVal
-```
 
 Note that the datasets will be downloaded (through [Academic
 Torrents](http://academictorrents.com/)) and prepared the first time they are
 used. Since ImageNet is quite large, this requires a lot of disk space and
 time. If you already have ImageNet on your disk, you can speed things up by
 putting the data into `${XDG_CACHE}/autoencoders/data/ILSVRC2012_{split}/data/`
-(which defaults to `~/.cache/autoencoders/data/ILSVRC2012_{split}/data/`), where `{split}` is 
+(which defaults to `~/.cache/autoencoders/data/ILSVRC2012_{split}/data/`), where `{split}` is
 one of `train`/`validation`. It should have the following structure:
 
 ```
@@ -84,30 +98,47 @@ ${XDG_CACHE}/autoencoders/data/ILSVRC2012_{split}/data/
 ```
 
 If you haven't extracted the data, you can also place
-`ILSVRC2012_img_train.tar`/`ILSVRC2012_img_val.tar` into
-`${XDG_CACHE}/autoencoders/data/ILSVRC2012_train/`/`${XDG_CACHE}/autoencoders/data/ILSVRC2012_validation/`, 
-which will then be extracted into above structure without downloading it again.
+`ILSVRC2012_img_train.tar`/`ILSVRC2012_img_val.tar` (or symlinks to them) into
+`${XDG_CACHE}/autoencoders/data/ILSVRC2012_train/` /
+`${XDG_CACHE}/autoencoders/data/ILSVRC2012_validation/`, which will then be
+extracted into above structure without downloading it again.  Note that this
+will only happen if neither a folder
+`${XDG_CACHE}/autoencoders/data/ILSVRC2012_{split}/data/` nor a file
+`${XDG_CACHE}/autoencoders/data/ILSVRC2012_{split}/.ready` exist. Remove them
+if you want to force running the dataset preparation again.
+
 
 ### AnimalFaces
-This dataset was for example used in [FUNIT](https://nvlabs.github.io/FUNIT/). It contains all 149 carnivorous mammal animal 
-classes from the ImageNet dataset. If this dataset is not available on your disk, the dataset will
-automatically be build upon first use, following the cropping procedure as described and 
-implemented [here](https://github.com/nvlabs/FUNIT/). Note that this requires that the __ImageNet__ dataset is already 
-present as described above.
+This dataset was for example used in [FUNIT](https://nvlabs.github.io/FUNIT/).
+It contains all 149 carnivorous mammal animal classes from the ImageNet
+dataset. If this dataset is not available on your disk, the dataset will
+automatically be build upon first use, following the cropping procedure as
+described and implemented [here](https://github.com/nvlabs/FUNIT/). Note that
+this requires that the `ImageNet` dataset is already present as described
+above.
 
-We provide two different splits of this dataset:
-    
+We provide two different splits of this dataset,
+
 - The *"classic"* FUNIT split: Here, the train set contains images of
     119 animal classes, while the test set contains 30 *different* classes.
-    - train split: __AnimalFacesTrain__
-    - test split: __AnimalFacesTest__
-    
-- The *"shared"* split: __AnimalFacesShared__: Here, both the train and test split contain images of 
+    - train split: `AnimalFacesTrain`
+    - test split: `AnimalFacesTest`
+
+- The *"shared"* split: `AnimalFacesShared`: Here, both the train and test split contain images of
     *all* 149 classes.
-    - train split: __AnimalFacesSharedTrain__
-    - test split: __AnimalFacesSharedTest__      
-    
+    - train split: `AnimalFacesSharedTrain`
+    - test split: `AnimalFacesSharedTest`
+
+And an additional subset of `AnimalFacesShared` available as
+
+- train split: `AnimalFacesRestrictedTrain`
+- test split: `AnimalFacesRestrictedTest`
+
 ### ImageNetAnimals
-This dataset contains the same images as __AnimalFacesShared__, but *without* cropping.
-- train split: __ImageNetAnimalsTrain__
-- test split: __ImageNetAnimalsValidation__
+This dataset contains the same images as `AnimalFaces`, but *without* cropping.
+In this case, the split follows that of ImageNet itself. Note that this is
+incompatible with the splits of AnimalFaces because the latter is a subset of
+the ImageNet train split.
+
+- train split: `ImageNetAnimalsTrain`
+- test split: `ImageNetAnimalsValidation`
