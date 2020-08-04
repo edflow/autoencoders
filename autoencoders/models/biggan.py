@@ -11,6 +11,10 @@ from autoencoders.models.util import ActNorm
 from autoencoders.ckpt_util import get_ckpt_path
 
 
+class GANException(Exception):
+    pass
+
+
 def l2normalize(v, eps=1e-4):
     return v / (v.norm() + eps)
 
@@ -229,6 +233,8 @@ class GBlock(nn.Module):
         else:
             skip = input
         return out + skip
+
+
 class Generator128(nn.Module):
     def __init__(self, code_dim=120, n_class=1000, chn=96, debug=False, use_actnorm=False):
         super().__init__()
@@ -261,6 +267,7 @@ class Generator128(nn.Module):
             self.ScaledCrossReplicaBN = ActNorm(1 * chn)
         self.colorize = SpectralNorm(nn.Conv2d(1 * chn, 3, [3, 3], padding=1))
 
+
     def forward(self, input, class_id, from_class_embedding=False):
         codes = torch.chunk(input, self.num_split, 1)
         if from_class_embedding:
@@ -280,6 +287,25 @@ class Generator128(nn.Module):
         out = F.relu(out)
         out = self.colorize(out)
         return torch.tanh(out)
+
+
+    @classmethod
+    def from_pretrained(cls):
+        G = cls()
+        ckpt = get_ckpt_path("biggan_128")
+        G.load_state_dict(torch.load(ckpt))
+        G.eval()
+        return G
+
+
+    def encode(self, *args, **kwargs):
+        raise GANException("Sorry, I'm a GAN and not very helpful for encoding.")
+
+
+    def decode(self, z, cls):
+        z = z.float()
+        cls_one_hot = torch.nn.functional.one_hot(cls, num_classes=1000).float()
+        return self.forward(z, cls_one_hot)
 
 
 class VariableDimGenerator128(Generator128):
@@ -306,6 +332,77 @@ class VariableDimGenerator128(Generator128):
         out = F.relu(out)
         out = self.colorize(out)
         return torch.tanh(out)
+
+
+class Generator256(nn.Module):
+    def __init__(self, code_dim=140, n_class=1000, chn=96, debug=False, use_actnorm=False):
+        super().__init__()
+
+        self.linear = nn.Linear(n_class, 128, bias=False)
+
+        if debug:
+            chn = 8
+
+        self.first_view = 16 * chn
+
+        self.G_linear = SpectralNorm(nn.Linear(20, 4 * 4 * 16 * chn))
+
+        self.GBlock = nn.ModuleList([
+            GBlock(16 * chn, 16 * chn, n_class=n_class),
+            GBlock(16 * chn, 8 * chn, n_class=n_class),
+            GBlock(8 * chn, 8 * chn, n_class=n_class),
+            GBlock(8 * chn, 4 * chn, n_class=n_class),
+            GBlock(4 * chn, 2 * chn, n_class=n_class),
+            GBlock(2 * chn, 1 * chn, n_class=n_class),
+        ])
+
+        self.sa_id = 5
+        self.num_split = len(self.GBlock) + 1
+        self.attention = SelfAttention(2 * chn)
+        if not use_actnorm:
+            self.ScaledCrossReplicaBN = BatchNorm2d(1 * chn, eps=1e-4)
+        else:
+            self.ScaledCrossReplicaBN = ActNorm(1 * chn)
+        self.colorize = SpectralNorm(nn.Conv2d(1 * chn, 3, [3, 3], padding=1))
+
+
+    def forward(self, input, class_id, from_class_embedding=False):
+        codes = torch.chunk(input, self.num_split, 1)
+        if from_class_embedding:
+            class_emb = class_id  # 128
+        else:
+            class_emb = self.linear(class_id)  # 128
+        out = self.G_linear(codes[0])
+        out = out.view(-1, 4, 4, self.first_view).permute(0, 3, 1, 2)
+        for i, (code, GBlock) in enumerate(zip(codes[1:], self.GBlock)):
+            if i == self.sa_id:
+                out = self.attention(out)
+            condition = torch.cat([code, class_emb], 1)
+            out = GBlock(out, condition)
+
+        out = self.ScaledCrossReplicaBN(out)
+        out = F.relu(out)
+        out = self.colorize(out)
+        return torch.tanh(out)
+
+
+    @classmethod
+    def from_pretrained(cls):
+        G = cls()
+        ckpt = get_ckpt_path("biggan_256")
+        G.load_state_dict(torch.load(ckpt))
+        G.eval()
+        return G
+
+
+    def encode(self, *args, **kwargs):
+        raise GANException("Sorry, I'm a GAN and not very helpful for encoding.")
+
+
+    def decode(self, z, cls):
+        z = z.float()
+        cls_one_hot = torch.nn.functional.one_hot(cls, num_classes=1000).float()
+        return self.forward(z, cls_one_hot)
 
 
 def update_G_linear(biggan_generator, n_in, n_out=16*16*96):

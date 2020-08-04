@@ -31,7 +31,8 @@ model = autoencoders.get_model("bigae_animals")
 
 Currently available models are
 
-- `bigae_animals`: Trained on `128x128x3` animal images from ImageNet.
+- `bigae_animals`: Trained on `128x128x3` animal images from `ImageNetTrain`.
+- `bigae_animalfaces`: Trained on `128x128x3` animal images from `AnimalFacesSharedTrain`.
 
 Models implement `encode`, which returns a Distribution, and `decode` which
 returns an image. A minimal working example is
@@ -51,6 +52,19 @@ p = model.encode(x)                                   # Distribution
 z = p.sample()                                        # sampled latent code
 xrec = model.decode(z)                                # batch,RGB,h,w
 ```
+
+We also include BigGAN models, `biggan_128`, `biggan_256`, but they do not
+implement `encode`.  `biggan_128` takes a sample from a normal distribution of
+size 120 and `biggan_256` of size 256. Both require an additional class label
+input (integer in `range(1000)`) for `decode`. You can start a demo for them
+by starting
+
+```
+streamlit run autoencoders/demo.py
+```
+
+and selecting `sample` from the Demo dropdown menu. Adjust `z_shape` to 140 if
+you select the `biggan_256` model.
 
 ## Data
 
@@ -157,3 +171,15 @@ the ImageNet train split.
 
 - train split: `ImageNetAnimalsTrain`
 - test split: `ImageNetAnimalsValidation`
+
+
+### BigGAN
+For convenience, we include datasets which provide inputs to BigGAN (or other
+class conditional models). They consist of `n_train_samples`/`n_test_samples`
+examples containing `z`, sampled from a (truncated, if `truncation` config value
+is specified) normal distribution of shape `z_shape`, and `class`, a random
+integer between `0` (inclusive) and `n_classes` (exclusive). Train split always
+samples anew for each example, test split contains deterministic examples.
+
+- train split: `TrainSamples`
+- test split: `TestSamples`

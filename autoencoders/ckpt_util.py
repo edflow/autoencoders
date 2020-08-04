@@ -6,6 +6,7 @@ URL_MAP = {
     "bigae_animals": "https://heibox.uni-heidelberg.de/f/f0adb4d509ea4132b9ea/?dl=1",
     "bigae_animalfaces": "https://heibox.uni-heidelberg.de/f/3c0bf40a85a84e2a986e/?dl=1",
     "biggan_128": "https://heibox.uni-heidelberg.de/f/56ed256209fd40968864/?dl=1",
+    "biggan_256": "https://heibox.uni-heidelberg.de/f/437b501944874bcc92a4/?dl=1",
     "dequant_vae": "https://heibox.uni-heidelberg.de/f/e7c8959b50a64f40826e/?dl=1"
 }
 
@@ -13,12 +14,14 @@ CKPT_MAP = {
     "bigae_animals": "autoencoders/bigae/animals-1672855.ckpt",
     "bigae_animalfaces": "autoencoders/bigae/animalfaces-631606.ckpt",
     "biggan_128": "autoencoders/biggan/biggan-128.pth",
+    "biggan_256": "autoencoders/biggan/biggan-256.pth",
     "dequant_vae": "autoencoders/dequant/dequantvae-20000.ckpt"
 }
 MD5_MAP = {
     "bigae_animals": "6213882571854935226a041b8dcaecdd",
     "bigae_animalfaces": "7f379d6ebcbc03a710ef0605806f0b51",
     "biggan_128": "a2148cf64807444113fac5eede060d28",
+    "biggan_256": "e23db3caa34ac4c4ae922a75258dcb8d",
     "dequant_vae": "5c2a6fe765142cbdd9f10f15d65a68b6"
 }
 
