@@ -117,7 +117,7 @@ described and implemented [here](https://github.com/nvlabs/FUNIT/). Note that
 this requires that the `ImageNet` dataset is already present as described
 above.
 
-We provide two different splits of this dataset,
+We provide two different splits of this dataset:
 
 - The *"classic"* FUNIT split: Here, the train set contains images of
     119 animal classes, while the test set contains 30 *different* classes.
@@ -129,10 +129,25 @@ We provide two different splits of this dataset,
     - train split: `AnimalFacesSharedTrain`
     - test split: `AnimalFacesSharedTest`
 
-And an additional subset of `AnimalFacesShared` available as
+An additional subset of `AnimalFacesShared`, which contains ten animal classes
+chosen to be visually dissimilar, is available as:
 
 - train split: `AnimalFacesRestrictedTrain`
 - test split: `AnimalFacesRestrictedTest`
+
+It consists of the following synsets:
+
+- 'n02099601': 'golden retriever'
+- 'n02114548': 'white wolf, Arctic wolf, Canis lupus tundrarum',
+- 'n02117135': 'hyena, hyaena',
+- 'n02119022': 'red fox, Vulpes vulpes',
+- 'n02123159': 'tiger cat',
+- 'n02127052': 'lynx, catamount',
+- 'n02128757': 'snow leopard, ounce, Panthera uncia',
+- 'n02129165': 'lion, king of beasts, Panthera leo',
+- 'n02132136': 'brown bear, bruin, Ursus arctos',
+- 'n02138441': 'meerkat, mierkat'
+
 
 ### ImageNetAnimals
 This dataset contains the same images as `AnimalFaces`, but *without* cropping.
