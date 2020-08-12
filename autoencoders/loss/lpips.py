@@ -22,7 +22,6 @@ class LPIPS(nn.Module):
         self.lin3 = NetLinLayer(self.chns[3], use_dropout=use_dropout)
         self.lin4 = NetLinLayer(self.chns[4], use_dropout=use_dropout)
         self.lins = [self.lin0, self.lin1, self.lin2, self.lin3, self.lin4]
-        #self.load_from_pretrained("autoencoders/loss/lpips_weights/vgg.pth")
 
     def load_from_pretrained(self, path):
         sd = torch.load(path, map_location="cpu")
@@ -35,7 +34,6 @@ class LPIPS(nn.Module):
         model = cls()
         ckpt = get_ckpt_path(name)
         model.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
-        #model.eval()
         return model
 
     def forward(self, input, target):
