@@ -1,0 +1,1 @@
+from autoencoders.loss.lpips import LPIPS
