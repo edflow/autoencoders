@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 
 from autoencoders.loss.util import vgg16, normalize_tensor, spatial_average
+from autoencoders.ckpt_util import get_ckpt_path
 
 
 class LPIPS(nn.Module):
@@ -21,11 +22,21 @@ class LPIPS(nn.Module):
         self.lin3 = NetLinLayer(self.chns[3], use_dropout=use_dropout)
         self.lin4 = NetLinLayer(self.chns[4], use_dropout=use_dropout)
         self.lins = [self.lin0, self.lin1, self.lin2, self.lin3, self.lin4]
-        self.load_from_pretrained("autoencoders/loss/lpips_weights/vgg.pth")
+        #self.load_from_pretrained("autoencoders/loss/lpips_weights/vgg.pth")
 
     def load_from_pretrained(self, path):
         sd = torch.load(path, map_location="cpu")
         missing, unexpected = self.load_state_dict(sd, strict=False)
+
+    @classmethod
+    def from_pretrained(cls, name):
+        if name is not "vgg_lpips":
+            raise NotImplementedError
+        model = cls()
+        ckpt = get_ckpt_path(name)
+        model.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
+        #model.eval()
+        return model
 
     def forward(self, input, target):
         in0_input, in1_input = (self.scaling_layer(input), self.scaling_layer(target))
@@ -63,7 +74,7 @@ class NetLinLayer(nn.Module):
 
 
 if __name__ == "__main__":
-    lpips = LPIPS()
+    lpips = LPIPS.from_pretrained("vgg_lpips")
     x = torch.randn(11, 3, 128, 128)
     y = torch.randn(11, 3, 128, 128)
     loss = lpips(x, y)
