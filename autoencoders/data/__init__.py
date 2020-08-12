@@ -7,3 +7,4 @@ from autoencoders.data.imagenet import (
     AnimalFacesSharedTrain, AnimalFacesSharedTest,
     AnimalFacesRestrictedTrain, AnimalFacesRestrictedTest,
 )
+from autoencoders.data.awa2 import AwA2Train, AwA2Test
