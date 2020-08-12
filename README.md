@@ -87,6 +87,7 @@ Possible values for `<DatasetSplit>`:
 - `AnimalFacesTrain`, `AnimalFacesTest`
 - `AnimalFacesSharedTrain`, `AnimalFacesSharedTest`
 - `AnimalFacesRestrictedTrain`, `AnimalFacesRestrictedTest`
+- `AwA2Train`, `AwA2Test`
 
 ### ImageNet
 
@@ -172,6 +173,16 @@ the ImageNet train split.
 - train split: `ImageNetAnimalsTrain`
 - test split: `ImageNetAnimalsValidation`
 
+
+### AwA2
+The [Animals with Attributes 2](http://cvml.ist.ac.at/AwA2/) dataset. Note that
+our train and test split contain the same classes, which is different from the
+original splits which contained disjoint animal classes.
+
+Place (or symlink) data extracted from `AwA2-data.zip` into
+`${XDG_CACHE}/autoencoders/data/AwA2/Animals_with_Attributes2`, or it will be
+extracted from `${XDG_CACHE}/autoencoders/data/AwA2/AwA2-data.zip`, which will
+be downloaded if not present.
 
 ### BigGAN
 For convenience, we include datasets which provide inputs to BigGAN (or other
