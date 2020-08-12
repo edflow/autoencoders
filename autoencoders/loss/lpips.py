@@ -15,17 +15,17 @@ class LPIPS(nn.Module):
         self.scaling_layer = ScalingLayer()
         self.chns = [64, 128, 256, 512, 512]  # vg16 features
         self.net = vgg16(pretrained=True, requires_grad=False)
-
         self.lin0 = NetLinLayer(self.chns[0], use_dropout=use_dropout)
         self.lin1 = NetLinLayer(self.chns[1], use_dropout=use_dropout)
         self.lin2 = NetLinLayer(self.chns[2], use_dropout=use_dropout)
         self.lin3 = NetLinLayer(self.chns[3], use_dropout=use_dropout)
         self.lin4 = NetLinLayer(self.chns[4], use_dropout=use_dropout)
-        self.lins = [self.lin0, self.lin1, self.lin2, self.lin3, self.lin4]
+        self.load_from_pretrained()
 
-    def load_from_pretrained(self, path):
-        sd = torch.load(path, map_location="cpu")
-        missing, unexpected = self.load_state_dict(sd, strict=False)
+    def load_from_pretrained(self, name="vgg_lpips"):
+        ckpt = get_ckpt_path(name)
+        self.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
+        print("loaded pretrained LPIPS loss from {}".format(ckpt))
 
     @classmethod
     def from_pretrained(cls, name="vgg_lpips"):
@@ -40,12 +40,12 @@ class LPIPS(nn.Module):
         in0_input, in1_input = (self.scaling_layer(input), self.scaling_layer(target))
         outs0, outs1 = self.net(in0_input), self.net(in1_input)
         feats0, feats1, diffs = {}, {}, {}
-
+        lins = [self.lin0, self.lin1, self.lin2, self.lin3, self.lin4]
         for kk in range(len(self.chns)):
             feats0[kk], feats1[kk] = normalize_tensor(outs0[kk]), normalize_tensor(outs1[kk])
             diffs[kk] = (feats0[kk] - feats1[kk]) ** 2
 
-        res = [spatial_average(self.lins[kk].model(diffs[kk]), keepdim=True) for kk in range(len(self.chns))]
+        res = [spatial_average(lins[kk].model(diffs[kk]), keepdim=True) for kk in range(len(self.chns))]
         val = res[0]
         for l in range(1, len(self.chns)):
             val += res[l]
@@ -63,7 +63,7 @@ class ScalingLayer(nn.Module):
 
 
 class NetLinLayer(nn.Module):
-    ''' A single linear layer which does a 1x1 conv '''
+    """ A single linear layer which does a 1x1 conv """
     def __init__(self, chn_in, chn_out=1, use_dropout=False):
         super(NetLinLayer, self).__init__()
         layers = [nn.Dropout(), ] if (use_dropout) else []
@@ -72,9 +72,14 @@ class NetLinLayer(nn.Module):
 
 
 if __name__ == "__main__":
-    lpips = LPIPS.from_pretrained("vgg_lpips")
-    x = torch.randn(11, 3, 128, 128)
-    y = torch.randn(11, 3, 128, 128)
+    # DataParallel test
+    ngpu = torch.cuda.device_count()
+    device_ids = [n for n in range(ngpu)]
+    lpips = LPIPS()
+    lpips = torch.nn.DataParallel(lpips, device_ids=device_ids)
+    lpips.cuda()
+    x = torch.randn(16, 3, 128, 128)
+    y = torch.randn(16, 3, 128, 128)
     loss = lpips(x, y)
     print("test loss:", loss.mean())
     print("done.")
