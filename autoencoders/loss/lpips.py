@@ -28,7 +28,7 @@ class LPIPS(nn.Module):
         missing, unexpected = self.load_state_dict(sd, strict=False)
 
     @classmethod
-    def from_pretrained(cls, name):
+    def from_pretrained(cls, name="vgg_lpips"):
         if name is not "vgg_lpips":
             raise NotImplementedError
         model = cls()
