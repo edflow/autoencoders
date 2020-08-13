@@ -394,15 +394,40 @@ class Generator256(nn.Module):
         G.eval()
         return G
 
-
     def encode(self, *args, **kwargs):
         raise GANException("Sorry, I'm a GAN and not very helpful for encoding.")
-
 
     def decode(self, z, cls):
         z = z.float()
         cls_one_hot = torch.nn.functional.one_hot(cls, num_classes=1000).float()
         return self.forward(z, cls_one_hot)
+
+
+class VariableDimGenerator256(Generator256):
+    """splits latent code z of dimension d in sizes (d-(k-1)*20, 20, 20, ..., 20),
+    here; k=6 (?), k is number of GBlocks"""
+    def __init__(self, code_dim, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        first_split = code_dim - (self.num_split-1)*20
+        self.split_at = [first_split] + [20 for i in range(self.num_split-1)]
+
+    def forward(self, input, class_id):
+        codes = torch.split(input, self.split_at, 1)
+        class_emb = self.linear(class_id)  # 128
+
+        out = self.G_linear(codes[0])
+        out = out.view(-1, 4, 4, self.first_view).permute(0, 3, 1, 2)
+        for i, (code, GBlock) in enumerate(zip(codes[1:], self.GBlock)):
+            if i == self.sa_id:
+                out = self.attention(out)
+            condition = torch.cat([code, class_emb], 1)
+            out = GBlock(out, condition)
+
+        out = self.ScaledCrossReplicaBN(out)
+        out = F.relu(out)
+        out = self.colorize(out)
+        return torch.tanh(out)
+
 
 
 def update_G_linear(biggan_generator, n_in, n_out=16*16*96):
@@ -411,7 +436,7 @@ def update_G_linear(biggan_generator, n_in, n_out=16*16*96):
 
 
 def load_variable_latsize_generator(size, z_dim, n_class = 1000, pretrained=True, use_actnorm=False):
-    generators = {128: VariableDimGenerator128}
+    generators = {128: VariableDimGenerator128, 256: VariableDimGenerator256}
     G = generators[size](z_dim, use_actnorm=use_actnorm, n_class=n_class)
 
     if pretrained:
