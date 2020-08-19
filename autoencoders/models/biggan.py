@@ -429,7 +429,6 @@ class VariableDimGenerator256(Generator256):
         return torch.tanh(out)
 
 
-
 def update_G_linear(biggan_generator, n_in, n_out=16*16*96):
     biggan_generator.G_linear = SpectralNorm(nn.Linear(n_in, n_out))
     return biggan_generator

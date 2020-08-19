@@ -165,6 +165,7 @@ It consists of the following synsets:
 
 
 ### ImageNetAnimals
+![teaser](img/animals_example.png)
 This dataset contains the same images as `AnimalFaces`, but *without* cropping.
 In this case, the split follows that of ImageNet itself. Note that this is
 incompatible with the splits of AnimalFaces because the latter is a subset of
