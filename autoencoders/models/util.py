@@ -85,7 +85,7 @@ class ActNorm(nn.Module):
 
         _, _, height, width = input.shape
 
-        if self.initialized.item() == 0:
+        if self.training and self.initialized.item() == 0:
             self.initialize(input)
             self.initialized.fill_(1)
 
