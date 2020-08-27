@@ -153,6 +153,15 @@ class BatchNorm2dWrap(nn.Module):
         return self.bn(x)
 
 
+class ActNorm2dWrap(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.bn = ActNorm(*args, **kwargs)
+
+    def forward(self, x, y=None):
+        return self.bn(x)
+
+
 class GBlock(nn.Module):
     def __init__(
         self,
@@ -201,7 +210,8 @@ class GBlock(nn.Module):
                     self.HyperBN = ConditionalActNorm2d(in_channel, z_dim)
                     self.HyperBN_1 = ConditionalActNorm2d(out_channel, z_dim)
                 else:
-                    raise NotImplementedError("non_conditional actnorm needs to be implemented here")
+                    self.HyperBN = ActNorm2dWrap(in_channel)
+                    self.HyperBN_1 = ActNorm2dWrap(out_channel)
 
     def forward(self, input, condition=None):
         out = input
@@ -245,9 +255,7 @@ class Generator128(nn.Module):
             chn = 8
 
         self.first_view = 16 * chn
-
         self.G_linear = SpectralNorm(nn.Linear(20, 4 * 4 * 16 * chn))
-
         z_dim = code_dim + 28
 
         self.GBlock = nn.ModuleList([
@@ -337,23 +345,27 @@ class VariableDimGenerator128(Generator128):
 class Generator256(nn.Module):
     def __init__(self, code_dim=140, n_class=1000, chn=96, debug=False, use_actnorm=False):
         super().__init__()
-
+        if not use_actnorm:
+            import warnings
+            class BatchNormWarning(UserWarning):
+                pass
+            warnings.warn("You are training with batch norm. It is highly recommended to switch to some "
+                          "other normalization method if a low batch size is used. Furthermore, Google may "
+                          "sue you for breaking the patent law!", BatchNormWarning)
         self.linear = nn.Linear(n_class, 128, bias=False)
 
         if debug:
             chn = 8
-
         self.first_view = 16 * chn
-
         self.G_linear = SpectralNorm(nn.Linear(20, 4 * 4 * 16 * chn))
 
         self.GBlock = nn.ModuleList([
-            GBlock(16 * chn, 16 * chn, n_class=n_class),
-            GBlock(16 * chn, 8 * chn, n_class=n_class),
-            GBlock(8 * chn, 8 * chn, n_class=n_class),
-            GBlock(8 * chn, 4 * chn, n_class=n_class),
-            GBlock(4 * chn, 2 * chn, n_class=n_class),
-            GBlock(2 * chn, 1 * chn, n_class=n_class),
+            GBlock(16 * chn, 16 * chn, n_class=n_class, use_actnorm=use_actnorm),
+            GBlock(16 * chn, 8 * chn, n_class=n_class, use_actnorm=use_actnorm),
+            GBlock(8 * chn, 8 * chn, n_class=n_class, use_actnorm=use_actnorm),
+            GBlock(8 * chn, 4 * chn, n_class=n_class, use_actnorm=use_actnorm),
+            GBlock(4 * chn, 2 * chn, n_class=n_class, use_actnorm=use_actnorm),
+            GBlock(2 * chn, 1 * chn, n_class=n_class, use_actnorm=use_actnorm),
         ])
 
         self.sa_id = 5
