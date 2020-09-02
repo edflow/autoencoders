@@ -106,6 +106,7 @@ class ResnetEncoder(nn.Module):
         type_ = retrieve(config, "Model/type", default='resnet50')
         load_pretrained = retrieve(config, "Model/pretrained")
         norm_layer = _norm_options[retrieve(config, "Model/norm")]
+        self.do_pre_processing = retrieve(config, "Model/pre_process", default=True)
         self.type = type_
         self.z_dim = z_dim
         self.model = __possible_resnets[type_](pretrained=load_pretrained, norm_layer=norm_layer)
@@ -126,13 +127,15 @@ class ResnetEncoder(nn.Module):
                                           in_channels=num_channels_pre_fc)
 
     def forward(self, x):
-        x = self._pre_process(x)
+        if self.do_pre_processing:
+            x = self._pre_process(x)
         features = self.features(x)
         encoding = self.model.fc(features)
         return encoding
 
     def features(self, x):
-        x = self._pre_process(x)
+        if self.do_pre_processing:
+            x = self._pre_process(x)
         x = self.model.conv1(x)
         x = self.model.bn1(x)
         x = self.model.relu(x)
