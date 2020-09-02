@@ -318,17 +318,31 @@ class Generator128(nn.Module):
 
 class VariableDimGenerator128(Generator128):
     """splits latent code z of dimension d in sizes (d-(k-1)*20, 20, 20, ..., 20),
-    here; k=5 (?), k is number of GBlocks"""
-    def __init__(self, code_dim, *args, **kwargs):
+    here; k=5 (?), k is number of GBlocks
+    use extra_z_dims to add extra dimensions to z into an already trained
+    generator
+    """
+    def __init__(self, code_dim, *args, extra_z_dims=list(), **kwargs):
         super().__init__(*args, **kwargs)
         first_split = code_dim - (self.num_split-1)*20
         self.split_at = [first_split] + [20 for i in range(self.num_split-1)]
+        self.extra_z_dims = extra_z_dims
+        self.extra_linears = nn.ModuleList()
+        for extra_z_dim in self.extra_z_dims:
+            self.extra_linears.append(SpectralNorm(nn.Linear(extra_z_dim, 4*4*self.first_view)))
+            self.split_at += [extra_z_dim]
 
     def forward(self, input, class_id):
         codes = torch.split(input, self.split_at, 1)
         class_emb = self.linear(class_id)  # 128
 
         out = self.G_linear(codes[0])
+
+        if self.extra_z_dims:
+            extra_codes = codes[self.num_split:]
+            for extra_code, extra_linear in zip(extra_codes, self.extra_linears):
+                out = out + extra_linear(extra_code)
+
         out = out.view(-1, 4, 4, self.first_view).permute(0, 3, 1, 2)
         for i, (code, GBlock) in enumerate(zip(codes[1:], self.GBlock)):
             if i == self.sa_id:
@@ -417,17 +431,31 @@ class Generator256(nn.Module):
 
 class VariableDimGenerator256(Generator256):
     """splits latent code z of dimension d in sizes (d-(k-1)*20, 20, 20, ..., 20),
-    here; k=6 (?), k is number of GBlocks"""
-    def __init__(self, code_dim, *args, **kwargs):
+    here; k=6 (?), k is number of GBlocks
+    use extra_z_dims to add extra dimensions to z into an already trained
+    generator
+    """
+    def __init__(self, code_dim, *args, extra_z_dims=list(), **kwargs):
         super().__init__(*args, **kwargs)
         first_split = code_dim - (self.num_split-1)*20
         self.split_at = [first_split] + [20 for i in range(self.num_split-1)]
+        self.extra_z_dims = extra_z_dims
+        self.extra_linears = nn.ModuleList()
+        for extra_z_dim in self.extra_z_dims:
+            self.extra_linears.append(SpectralNorm(nn.Linear(extra_z_dim, 4*4*self.first_view)))
+            self.split_at += [extra_z_dim]
 
     def forward(self, input, class_id):
         codes = torch.split(input, self.split_at, 1)
         class_emb = self.linear(class_id)  # 128
 
         out = self.G_linear(codes[0])
+
+        if self.extra_z_dims:
+            extra_codes = codes[self.num_split:]
+            for extra_code, extra_linear in zip(extra_codes, self.extra_linears):
+                out = out + extra_linear(extra_code)
+
         out = out.view(-1, 4, 4, self.first_view).permute(0, 3, 1, 2)
         for i, (code, GBlock) in enumerate(zip(codes[1:], self.GBlock)):
             if i == self.sa_id:
@@ -446,9 +474,12 @@ def update_G_linear(biggan_generator, n_in, n_out=16*16*96):
     return biggan_generator
 
 
-def load_variable_latsize_generator(size, z_dim, n_class = 1000, pretrained=True, use_actnorm=False):
+def load_variable_latsize_generator(size, z_dim, n_class = 1000,
+                                    pretrained=True, use_actnorm=False,
+                                    extra_z_dims=list()):
     generators = {128: VariableDimGenerator128, 256: VariableDimGenerator256}
-    G = generators[size](z_dim, use_actnorm=use_actnorm, n_class=n_class)
+    G = generators[size](z_dim, use_actnorm=use_actnorm, n_class=n_class,
+                         extra_z_dims=extra_z_dims)
 
     if pretrained:
         assert n_class==1000
