@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -44,12 +45,14 @@ class Distribution(object):
 
 
 class ActNorm(nn.Module):
-    def __init__(self, num_features, logdet=False, affine=True):
+    def __init__(self, num_features, logdet=False, affine=True,
+                 allow_reverse_init=False):
         assert affine
         super().__init__()
         self.logdet = logdet
         self.loc = nn.Parameter(torch.zeros(1, num_features, 1, 1))
         self.scale = nn.Parameter(torch.ones(1, num_features, 1, 1))
+        self.allow_reverse_init = allow_reverse_init
 
         self.register_buffer('initialized', torch.tensor(0, dtype=torch.uint8))
 
@@ -103,6 +106,16 @@ class ActNorm(nn.Module):
         return h
 
     def reverse(self, output):
+        if self.training and self.initialized.item() == 0:
+            if not self.allow_reverse_init:
+                raise RuntimeError(
+                    "Initializing ActNorm in reverse direction is "
+                    "disabled by default. Use allow_reverse_init=True to enable."
+                )
+            else:
+                self.initialize(output)
+                self.initialized.fill_(1)
+
         if len(output.shape) == 2:
             output = output[:,:,None,None]
             squeeze = True
