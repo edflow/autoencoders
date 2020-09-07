@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm, trange
 import urllib
+import yaml
 from PIL import Image
 
 from edflow.util import retrieve
@@ -13,16 +14,56 @@ from autoencoders.ckpt_util import download
 from autoencoders.data.util import ImagePaths
 
 
+def give_synsets_from_indices(indices, path_to_yaml="data/imagenet_idx_to_synset.yaml"):
+    synsets = []
+    with open(path_to_yaml) as f:
+        di2s = yaml.load(f)
+    for idx in indices:
+        synsets.append(str(di2s[idx]))
+    print("Using {} different synsets for construction of restricted imagenet.".format(len(synsets)))
+    return synsets
+
+
+def str_to_indices(string):
+    """Expects a string in the format '900, 32-123, 256, 280-321', does not seed to be sorted"""
+    assert not string.endswith(","), "provided string '{}' ends with a comma, pls remove it".format(string)
+    subs = string.split(",")
+    indices = []
+    for sub in subs:
+        subsubs = sub.split("-")
+        assert len(subsubs) > 0
+        if len(subsubs) == 1:
+            indices.append(int(subsubs[0]))
+        else:
+            rang = [j for j in range(int(subsubs[0]), int(subsubs[1]))]
+            indices.extend(rang)
+    return sorted(indices)
+
+
 class ImageNetBase(edu.DatasetMixin):
     def __init__(self, config=None):
         self.config = config or dict()
         self.logger = edu.get_logger(self)
         self._prepare()
         self._prepare_synset_to_human()
+        self._prepare_idx_to_synset()
         self._load()
 
     def _prepare(self):
         raise NotImplementedError()
+
+    def _filter_relpaths(self, relpaths):
+        if "sub_indices" in self.config:
+            indices = str_to_indices(self.config["sub_indices"])
+            synsets = give_synsets_from_indices(indices, path_to_yaml=self.idx2syn)  # returns a list of strings
+            files = []
+            for rpath in relpaths:
+                syn = rpath.split("/")[0]
+                if syn in synsets:
+                    files.append(rpath)
+            return files
+        else:
+            return relpaths
 
     def _prepare_synset_to_human(self):
         SIZE = 2655750
@@ -32,11 +73,20 @@ class ImageNetBase(edu.DatasetMixin):
                 not os.path.getsize(self.human_dict)==SIZE):
             download(URL, self.human_dict)
 
+    def _prepare_idx_to_synset(self):
+        URL = "https://heibox.uni-heidelberg.de/f/d835d5b6ceda4d3aa910/?dl=1"
+        self.idx2syn = os.path.join(self.root, "index_synset.yaml")
+        if (not os.path.exists(self.idx2syn)):
+            download(URL, self.idx2syn)
+
     def _load(self):
         with open(self.txt_filelist, "r") as f:
             self.relpaths = f.read().splitlines()
+            l1 = len(self.relpaths)
+            self.relpaths = self._filter_relpaths(self.relpaths)
+            print("Removed {} files from filelist during filtering.".format(l1 - len(self.relpaths)))
 
-        assert len(self.relpaths) == self.expected_length
+        #assert len(self.relpaths) == self.expected_length  # throws error if restricted
 
         self.synsets = [p.split("/")[0] for p in self.relpaths]
         self.abspaths = [os.path.join(self.datadir, p) for p in self.relpaths]
