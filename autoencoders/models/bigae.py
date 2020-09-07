@@ -35,21 +35,23 @@ class BigGANDecoderWrapper(nn.Module):
     """Wraps a BigGAN into our autoencoding framework"""
     def __init__(self, config):
         super().__init__()
-        z_dim = retrieve(config, "Model/z_dim")
+        z_dim = self.z_dim = retrieve(config, "Model/z_dim")
         image_size = retrieve(config, 'Model/in_size', default=128)
         use_actnorm = retrieve(config, 'Model/use_actnorm_in_dec', default=False)
         pretrained = retrieve(config, 'Model/pretrained', default=True)
         class_embedding_dim = 1000
+        self.extra_z_dims = retrieve(config, "Model/extra_z_dims", default=list())
 
         self.map_to_class_embedding = ClassUp(z_dim, depth=2, hidden_dim=2*class_embedding_dim,
                                               use_sigmoid=False, out_dim=class_embedding_dim)
         self.decoder = load_variable_latsize_generator(image_size, z_dim,
                                                        pretrained=pretrained,
                                                        use_actnorm=use_actnorm,
-                                                       n_class=class_embedding_dim)
+                                                       n_class=class_embedding_dim,
+                                                       extra_z_dims=self.extra_z_dims)
 
     def forward(self, x, labels=None):
-        emb = self.map_to_class_embedding(x)
+        emb = self.map_to_class_embedding(x[:,:self.z_dim,...])
         x = self.decoder(x, emb)
         return x
 
