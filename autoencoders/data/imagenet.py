@@ -24,8 +24,10 @@ def give_synsets_from_indices(indices, path_to_yaml="data/imagenet_idx_to_synset
 
 
 def str_to_indices(string, grouping=False):
-    """Expects a string in the format '900, 32-123, 256, 280-321', does not seed to be sorted.
-    If 'grouping=True', this function returns a dict with group - indices assignment, as separated by ','
+    """Expects a string in the format '900, 32-123, 256, 280-321'.
+    If 'grouping=True', this function returns a dict with group - indices assignment, as separated by ','.
+    For the latter, the order as given in the string will be used to create the groups of indices (which might
+    later be used for superclassing etc).
     """
     assert not string.endswith(","), "provided string '{}' ends with a comma, pls remove it".format(string)
     subs = string.split(",")
