@@ -20,24 +20,37 @@ def give_synsets_from_indices(indices, path_to_yaml="data/imagenet_idx_to_synset
         di2s = yaml.load(f)
     for idx in indices:
         synsets.append(str(di2s[idx]))
-    print("Using {} different synsets for construction of restricted imagenet.".format(len(synsets)))
     return synsets
 
 
-def str_to_indices(string):
-    """Expects a string in the format '900, 32-123, 256, 280-321', does not seed to be sorted"""
+def str_to_indices(string, grouping=False):
+    """Expects a string in the format '900, 32-123, 256, 280-321', does not seed to be sorted.
+    If 'grouping=True', this function returns a dict with group - indices assignment, as separated by ','
+    """
     assert not string.endswith(","), "provided string '{}' ends with a comma, pls remove it".format(string)
     subs = string.split(",")
-    indices = []
-    for sub in subs:
-        subsubs = sub.split("-")
-        assert len(subsubs) > 0
-        if len(subsubs) == 1:
-            indices.append(int(subsubs[0]))
-        else:
-            rang = [j for j in range(int(subsubs[0]), int(subsubs[1]))]
-            indices.extend(rang)
-    return sorted(indices)
+    if not grouping:
+        indices = []
+        for sub in subs:
+            subsubs = sub.split("-")
+            assert len(subsubs) > 0
+            if len(subsubs) == 1:
+                indices.append(int(subsubs[0]))
+            else:
+                rang = [j for j in range(int(subsubs[0]), int(subsubs[1]))]
+                indices.extend(rang)
+        return sorted(indices)
+    else:
+        indices = dict()
+        for sub in subs:
+            subsubs = sub.split("-")
+            assert len(subsubs) > 0
+            if len(subsubs) == 1:
+                indices[sub] = [int(subsubs[0])]
+            else:
+                rang = [j for j in range(int(subsubs[0]), int(subsubs[1]))]
+                indices[sub] = rang
+        return indices
 
 
 class ImageNetBase(edu.DatasetMixin):
@@ -65,6 +78,14 @@ class ImageNetBase(edu.DatasetMixin):
         else:
             return relpaths
 
+    def _build_superclasses(self):
+        assert "sub_indices" in self.config
+        index_dict = str_to_indices(self.config["sub_indices"], grouping=True)
+        self.synset_classdict = dict()
+        for i, key in enumerate(index_dict):
+            for synset in give_synsets_from_indices(index_dict[key], path_to_yaml=self.idx2syn):
+                self.synset_classdict[synset] = i
+
     def _prepare_synset_to_human(self):
         SIZE = 2655750
         URL = "https://heibox.uni-heidelberg.de/f/9f28e956cd304264bb82/?dl=1"
@@ -85,8 +106,10 @@ class ImageNetBase(edu.DatasetMixin):
             l1 = len(self.relpaths)
             self.relpaths = self._filter_relpaths(self.relpaths)
             print("Removed {} files from filelist during filtering.".format(l1 - len(self.relpaths)))
+            print("Size of dataset is now {} files.".format(len(self.relpaths)))
 
-        #assert len(self.relpaths) == self.expected_length  # throws error if restricted
+        if "sub_indices" in self.config:
+            self._build_superclasses()
 
         self.synsets = [p.split("/")[0] for p in self.relpaths]
         self.abspaths = [os.path.join(self.datadir, p) for p in self.relpaths]
@@ -94,6 +117,12 @@ class ImageNetBase(edu.DatasetMixin):
         unique_synsets = np.unique(self.synsets)
         class_dict = dict((synset, i) for i, synset in enumerate(unique_synsets))
         self.class_labels = [class_dict[s] for s in self.synsets]
+
+        self.superclasses = [self.synset_classdict[s] if "sub_indices" in self.config else -1 for s in self.synsets]
+        if retrieve(self.config, "use_superclasses", default=False):
+            assert "sub_indices" in self.config
+            print("Using {} different superclasses of ImageNet.".format(len(np.unique(np.array(self.superclasses)))))
+            self.class_labels = self.superclasses
 
         with open(self.human_dict, "r") as f:
             human_dict = f.read().splitlines()
@@ -106,6 +135,7 @@ class ImageNetBase(edu.DatasetMixin):
             "synsets": np.array(self.synsets),
             "class_label": np.array(self.class_labels),
             "human_label": np.array(self.human_labels),
+            "superclass": np.array(self.superclasses),
         }
         self.data = ImagePaths(self.abspaths,
                                labels=labels,
@@ -392,7 +422,12 @@ class AnimalFacesRestrictedTest(AnimalFacesBase):
 
 if __name__ == "__main__":
     from edflow.util import pp2mkdtable
-
+    print("Restricted ImageNet (RIN)")
+    d = ImageNetValidation(config={"sub_indices": "3, 12-256, 454-501, 777-901, 999", "use_superclasses": True})
+    print(len(d))
+    e = d[0]
+    print(pp2mkdtable(e))
+    raise StopIteration
     print("ImageNet")
     print("train")
     d = ImageNetTrain()
