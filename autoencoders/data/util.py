@@ -51,8 +51,15 @@ class Folder(DatasetMixin):
         folder = retrieve(config, "Folder/folder")
         size = retrieve(config, "Folder/size", default=0)
         random_crop = retrieve(config, "Folder/random_crop", default=False)
-
+        min_cut = retrieve(config, "Folder/min_cut", default="none")
+        max_cut = retrieve(config, "Folder/max_cut", default="none")
         relpaths = sorted(os.listdir(folder))
+
+        if min_cut is not "none":
+            assert max_cut is not "none"
+            assert type(min_cut) == type(max_cut) == int
+            relpaths = relpaths[min_cut:max_cut]
+
         abspaths = [os.path.join(folder, p) for p in relpaths]
         labels = {"relpaths": relpaths}
 
